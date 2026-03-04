@@ -5,6 +5,7 @@ import org.allaymc.api.block.property.type.BlockPropertyTypes;
 import org.allaymc.api.block.type.BlockState;
 import org.allaymc.api.block.type.BlockType;
 import org.allaymc.api.block.type.BlockTypes;
+import org.allaymc.api.world.chunk.UnsafeChunk;
 import org.allaymc.api.world.generator.context.PopulateContext;
 import org.allaymc.api.world.generator.function.Populator;
 
@@ -486,6 +487,21 @@ final class OldWorldAccess {
         context.setBlockState(x, y, z, state);
     }
 
+    void scheduleFluidUpdate(int x, int y, int z) {
+        if (y < 0 || y >= OldChunkBuffer.GEN_DEPTH) {
+            return;
+        }
+        UnsafeChunk chunk = getChunk(x, z);
+        if (chunk == null) {
+            return;
+        }
+        int localX = x & 15;
+        int localZ = z & 15;
+        if (!chunk.hasScheduledUpdate(localX, y, localZ)) {
+            chunk.addScheduledUpdate(localX, y, localZ, 0L);
+        }
+    }
+
     boolean isAir(int x, int y, int z) {
         return getType(x, y, z) == BlockTypes.AIR;
     }
@@ -589,6 +605,13 @@ final class OldWorldAccess {
 
     static boolean isLog(BlockType<?> type) {
         return LOGS.contains(type);
+    }
+
+    private UnsafeChunk getChunk(int x, int z) {
+        if ((x >> 4) == context.getCurrentChunk().getX() && (z >> 4) == context.getCurrentChunk().getZ()) {
+            return context.getCurrentChunk();
+        }
+        return context.getChunkSource().getChunk(x >> 4, z >> 4);
     }
 
     private static BlockState persistent(BlockState state) {
@@ -830,6 +853,7 @@ final class OldSpringFeature implements OldFeature {
 
         if (rockCount == 3 && holeCount == 1) {
             world.setBlockState(x, y, z, liquid);
+            world.scheduleFluidUpdate(x, y, z);
         }
         return true;
     }
