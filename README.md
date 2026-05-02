@@ -1,4 +1,4 @@
-# Old Console WorldGen
+# Legacy Console Edition WorldGen
 
 Re-implementation of a Minecraft Legacy Console Edition world generation based on https://github.com/smartcmd/MinecraftConsoles to be used in AllayMC.
 
